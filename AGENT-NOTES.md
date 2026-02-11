@@ -2,14 +2,13 @@
 
 # Project Overview
 
-Tentative name: Bluesky Post Expose
+Tentative name: Bluesky Postmortems
 
 I want a one-page static web app that, given the URL to a post on the social media network Bluesky, fetches and renders the post's data and metadata, and its associated data, particularly its replies and its quote-posts. This app should provide a convenient and comprehensive view of the post, including a showcase of its best/most engaged-with quotes and replies.
 
-
 # Detailed requirements and use case
 
-When the user visits the Bluesky Post Expose webapp, they are given a prompt to paste in a URL to a Bluesky post, e.g.
+When the user visits the Bluesky Postmortems webapp, they are given a prompt to paste in a URL to a Bluesky post, e.g.
 
     https://bsky.app/profile/bsky.app/post/3mehblstckk2e
 
@@ -30,13 +29,11 @@ The webapp should also provide a "Download" button, and when pressed, it should 
 }
 ```
 
-
 # Technical requirements
 
 The app should be built using the Svelte 5.0 app, and it should use TypeScript. It should use Svelte's static adapter, allowing it to be deployed on Github Pages via Github Actions
 
 By default, use a 0.2 second delay between each API call as to not overload the public API.
-
 
 # API Details
 
@@ -49,8 +46,6 @@ Fetch the user's `did` by using the `identity.resolveHandle` endpoint.
 API docs:
 https://docs.bsky.app/docs/api/com-atproto-identity-resolve-handle
 
-
-
 Sample API call:
 
 ```html
@@ -60,7 +55,7 @@ https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=bsky.
 Sample API response:
 
 ```json
-{"did":"did:plc:z72i7hdynmk6r22z27h6tvur"}
+{ "did": "did:plc:z72i7hdynmk6r22z27h6tvur" }
 ```
 
 ## Get the post's metadata with `app.bsky.feed.getPosts`
@@ -70,13 +65,11 @@ Fetch the post metadata using the `app.bsky.feed.getPosts` endpoint
 API docs:
 https://docs.bsky.app/docs/api/app-bsky-feed-get-posts
 
-
 Sample API call:
 
 ```html
 https://public.api.bsky.app/xrpc/app.bsky.feed.getPosts?uris=at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mehblstckk2e
 ```
-
 
 Sample API response:
 
@@ -130,9 +123,7 @@ Sample API response:
             }
           ]
         },
-        "langs": [
-          "en"
-        ],
+        "langs": ["en"],
         "text": "v1.116 is rolling out now!\n\nFor all the overthinkers and perfectionists out there, we're launching Drafts."
       },
       "embed": {
@@ -161,13 +152,11 @@ Sample API response:
 }
 ```
 
-
 ## Get quotes of the post with `app.bsky.feed.getQuotes`
 
 API docs:
 
 https://docs.bsky.app/docs/api/app-bsky-feed-get-quotes
-
 
 Sample API call:
 
@@ -206,9 +195,7 @@ Sample response:
             "uri": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mehblstckk2e"
           }
         },
-        "langs": [
-          "en"
-        ],
+        "langs": ["en"],
         "text": "Great, now we also need the peer-review option and every post by an academic will be delayed by two to three years (or just desk-rejected by the moderation team)."
       },
       "embed": {
@@ -261,9 +248,7 @@ Sample response:
                 }
               ]
             },
-            "langs": [
-              "en"
-            ],
+            "langs": ["en"],
             "text": "v1.116 is rolling out now!\n\nFor all the overthinkers and perfectionists out there, we're launching Drafts."
           },
           "labels": [],
@@ -327,9 +312,7 @@ Sample response:
             "uri": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mehblstckk2e"
           }
         },
-        "langs": [
-          "es"
-        ],
+        "langs": ["es"],
         "text": "Esto vendrá bien"
       },
       "embed": {
@@ -382,9 +365,7 @@ Sample response:
                 }
               ]
             },
-            "langs": [
-              "en"
-            ],
+            "langs": ["en"],
             "text": "v1.116 is rolling out now!\n\nFor all the overthinkers and perfectionists out there, we're launching Drafts."
           },
           "labels": [],
@@ -486,9 +467,7 @@ Sample response:
             }
           }
         },
-        "langs": [
-          "en"
-        ],
+        "langs": ["en"],
         "text": "This is useful 😊👍"
       },
       "embed": {
@@ -565,9 +544,7 @@ Sample response:
                   }
                 ]
               },
-              "langs": [
-                "en"
-              ],
+              "langs": ["en"],
               "text": "v1.116 is rolling out now!\n\nFor all the overthinkers and perfectionists out there, we're launching Drafts."
             },
             "labels": [],
@@ -609,9 +586,7 @@ Sample response:
 }
 ```
 
-
 ## Get replies with `api.bsky.feed.getPostThread`
-
 
 API docs:
 https://docs.bsky.app/docs/api/app-bsky-feed-get-post-thread
@@ -621,16 +596,13 @@ Sample API call:
 ```html
 https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mehblstckk2e
 ```
+
 Sample response: [tests/samples/getPostThread.response.json](tests/samples/getPostThread.response.json)
-
-
 
 ## (not used right now) Get who reposted with `app.bsky.feed.getRepostedBy`
 
-
 API docs:
 https://docs.bsky.app/docs/api/app-bsky-feed-get-reposted-by
-
 
 Sample API call:
 
@@ -684,7 +656,3 @@ Sample response:
   "uri": "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mehblstckk2e"
 }
 ```
-
-
-
-

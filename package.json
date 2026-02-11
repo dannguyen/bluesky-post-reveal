@@ -1,0 +1,27 @@
+{
+  "name": "bluesky-postmortems",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.6",
+    "@sveltejs/kit": "^2.8.0",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "svelte": "^5.0.0",
+    "svelte-check": "^4.0.0",
+    "typescript": "^5.0.0",
+    "prettier": "^3.3.2",
+    "prettier-plugin-svelte": "^3.2.6",
+    "vite": "^5.4.0",
+    "vitest": "^4.0.18"
+  }
+}
