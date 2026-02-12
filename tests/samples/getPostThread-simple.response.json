@@ -1,0 +1,112 @@
+{
+  "thread": {
+    "$type": "app.bsky.feed.defs#threadViewPost",
+    "post": {
+      "uri": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.post/3memlv65ejk2y",
+      "cid": "bafyreiglrax526zssp4dk5gtxkefjlku5l3ljpekc26s4qfy3tar3h2ywi",
+      "author": {
+        "did": "did:plc:oy2ebrbjfsmr3oacqe5mbuw5",
+        "handle": "dancow.bsky.social",
+        "displayName": "Dan Nguyen",
+        "avatar": "https://cdn.bsky.app/img/avatar/plain/did:plc:oy2ebrbjfsmr3oacqe5mbuw5/bafkreigntqxqkv3jqamjyhuhed6cwdwdo3vruitr56uli7wa3qtlhoghqu@jpeg",
+        "associated": {
+          "chat": {
+            "allowIncoming": "following"
+          },
+          "activitySubscription": {
+            "allowSubscriptions": "followers"
+          }
+        },
+        "labels": [],
+        "createdAt": "2023-04-27T18:10:15.521Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "createdAt": "2026-02-11T23:09:19.895Z",
+        "langs": ["en"],
+        "text": "test"
+      },
+      "bookmarkCount": 0,
+      "replyCount": 1,
+      "repostCount": 0,
+      "likeCount": 0,
+      "quoteCount": 0,
+      "indexedAt": "2026-02-11T23:09:20.150Z",
+      "labels": [],
+      "threadgate": {
+        "uri": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.threadgate/3memlv65ejk2y",
+        "cid": "bafyreihescvvzavz6a34u2atmmrjp43lx2t5cmz2oxe3v5nn2wjmqbp2re",
+        "record": {
+          "$type": "app.bsky.feed.threadgate",
+          "allow": [],
+          "createdAt": "2026-02-11T23:09:49.574Z",
+          "hiddenReplies": [],
+          "post": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.post/3memlv65ejk2y"
+        },
+        "lists": []
+      }
+    },
+    "replies": [
+      {
+        "$type": "app.bsky.feed.defs#threadViewPost",
+        "post": {
+          "uri": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.post/3memlvffl6s2y",
+          "cid": "bafyreihj5uk6etfe7kp5nwelkqj4nqhw7wnr52sdizdvl4vm5w52f72yk4",
+          "author": {
+            "did": "did:plc:oy2ebrbjfsmr3oacqe5mbuw5",
+            "handle": "dancow.bsky.social",
+            "displayName": "Dan Nguyen",
+            "avatar": "https://cdn.bsky.app/img/avatar/plain/did:plc:oy2ebrbjfsmr3oacqe5mbuw5/bafkreigntqxqkv3jqamjyhuhed6cwdwdo3vruitr56uli7wa3qtlhoghqu@jpeg",
+            "associated": {
+              "chat": {
+                "allowIncoming": "following"
+              },
+              "activitySubscription": {
+                "allowSubscriptions": "followers"
+              }
+            },
+            "labels": [],
+            "createdAt": "2023-04-27T18:10:15.521Z"
+          },
+          "record": {
+            "$type": "app.bsky.feed.post",
+            "createdAt": "2026-02-11T23:09:27.504Z",
+            "langs": ["en"],
+            "reply": {
+              "parent": {
+                "cid": "bafyreiglrax526zssp4dk5gtxkefjlku5l3ljpekc26s4qfy3tar3h2ywi",
+                "uri": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.post/3memlv65ejk2y"
+              },
+              "root": {
+                "cid": "bafyreiglrax526zssp4dk5gtxkefjlku5l3ljpekc26s4qfy3tar3h2ywi",
+                "uri": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.post/3memlv65ejk2y"
+              }
+            },
+            "text": "reply"
+          },
+          "bookmarkCount": 0,
+          "replyCount": 3,
+          "repostCount": 0,
+          "likeCount": 1,
+          "quoteCount": 0,
+          "indexedAt": "2026-02-11T23:09:27.753Z",
+          "labels": []
+        },
+        "threadContext": {}
+      }
+    ],
+    "threadContext": {}
+  },
+  "threadgate": {
+    "uri": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.threadgate/3memlv65ejk2y",
+    "cid": "bafyreihescvvzavz6a34u2atmmrjp43lx2t5cmz2oxe3v5nn2wjmqbp2re",
+    "record": {
+      "$type": "app.bsky.feed.threadgate",
+      "allow": [],
+      "createdAt": "2026-02-11T23:09:49.574Z",
+      "hiddenReplies": [],
+      "post": "at://did:plc:oy2ebrbjfsmr3oacqe5mbuw5/app.bsky.feed.post/3memlv65ejk2y"
+    },
+    "lists": []
+  }
+}

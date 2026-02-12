@@ -27,10 +27,14 @@ export function humanTimeDurationFormatter(
     DURATION_UNITS[DURATION_UNITS.length - 1];
 
   const value = absoluteSeconds / selectedUnit.seconds;
-  const roundedValue = Number(value.toFixed(maximumFractionDigits));
+  const roundedValue =
+    selectedUnit.label === "year"
+      ? Number(value.toFixed(maximumFractionDigits))
+      : Math.ceil(value);
   const formatter = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
-    maximumFractionDigits,
+    maximumFractionDigits:
+      selectedUnit.label === "year" ? maximumFractionDigits : 0,
   });
 
   const unitLabel =

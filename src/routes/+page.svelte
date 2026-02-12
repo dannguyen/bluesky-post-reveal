@@ -19,6 +19,7 @@
     fetchQuotes,
     fetchThread,
     getEngagement,
+    hasOwnMedia,
     getPostTimestamp,
     parsePostUrl,
     resolveDid,
@@ -46,8 +47,10 @@
   let sortDirection: SortDirection = 'biggest';
   let minEngagementInput: number | '' = '';
   let accountOlderThanDaysInput: number | '' = '';
+  let hasMediaOnlyInput = false;
   let appliedMinEngagementInput: number | '' = '';
   let appliedAccountOlderThanDaysInput: number | '' = '';
+  let appliedHasMediaOnlyInput = false;
   let quotePage = 1;
   let replyPage = 1;
 
@@ -77,7 +80,8 @@
     quotes.filter(
       (item) =>
         passesMinEngagementFilter(item, minEngagementThreshold) &&
-        passesAccountAgeFilter(item, rootPostTimestampMs, minAccountOlderDays)
+        passesAccountAgeFilter(item, rootPostTimestampMs, minAccountOlderDays) &&
+        passesMediaFilter(item, appliedHasMediaOnlyInput)
     ),
     sortBy,
     sortDirection
@@ -86,7 +90,8 @@
     replies.filter(
       (item) =>
         passesMinEngagementFilter(item, minEngagementThreshold) &&
-        passesAccountAgeFilter(item, rootPostTimestampMs, minAccountOlderDays)
+        passesAccountAgeFilter(item, rootPostTimestampMs, minAccountOlderDays) &&
+        passesMediaFilter(item, appliedHasMediaOnlyInput)
     ),
     sortBy,
     sortDirection
@@ -108,7 +113,7 @@
   $: highestEngagementQuote = highestEngagementPost(quotes);
   $: highestEngagementReply = highestEngagementPost(replies);
   $: statusLabel = isBootstrapping || isPolling ? 'fetching' : hasReachedFinalQuoteCursor ? 'complete' : pollStatus.toLowerCase();
-  $: filterSignature = `${sortBy}:${sortDirection}:${minEngagementThreshold ?? 'none'}:${minAccountOlderDays ?? 'none'}`;
+  $: filterSignature = `${sortBy}:${sortDirection}:${minEngagementThreshold ?? 'none'}:${minAccountOlderDays ?? 'none'}:${appliedHasMediaOnlyInput ? 'media-only' : 'all-media'}`;
   $: if (filterSignature !== lastFilterSignature) {
     quotePage = 1;
     replyPage = 1;
@@ -130,6 +135,7 @@
     filterApplyTimer = setTimeout(() => {
       appliedMinEngagementInput = minEngagementInput;
       appliedAccountOlderThanDaysInput = accountOlderThanDaysInput;
+      appliedHasMediaOnlyInput = hasMediaOnlyInput;
     }, 500);
   }
 
@@ -259,6 +265,14 @@
     }
 
     return true;
+  }
+
+  function passesMediaFilter(post: FeedPost, mediaOnly: boolean): boolean {
+    if (!mediaOnly) {
+      return true;
+    }
+
+    return hasOwnMedia(post);
   }
 
   function getPostText(post: FeedPost): string {
@@ -525,6 +539,10 @@
           <span>Likes {formatCount(postData.likeCount)}</span>
         </div>
         <p class="muted">Created {formatTimestamp(getPostTimestamp(postData))}</p>
+        <div class="post-meta-lines">
+          <p><strong>URI:</strong> <code>{postData.uri}</code></p>
+          <p><strong>Author DID:</strong> <code>{postData.author.did}</code></p>
+        </div>
       </section>
 
       <aside class="panel stats-panel" in:fly={{ y: 12, duration: 240, delay: 40 }}>
@@ -623,9 +641,14 @@
           />
           <span>days older than the post</span>
         </label>
+
+        <label class="filter-row checkbox-row">
+          <input type="checkbox" bind:checked={hasMediaOnlyInput} on:change={scheduleFilterApply} />
+          <span>Post has images/video</span>
+        </label>
       </div>
       <p class="filter-note">
-        Empty or 0 values disable each filter. Positive values apply the corresponding filter.
+        Empty or 0 values disable numeric filters. Enable "Post has images/video" to require media.
       </p>
     </section>
 

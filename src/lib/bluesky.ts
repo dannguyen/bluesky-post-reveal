@@ -178,7 +178,8 @@ export async function fetchThread(
 ): Promise<GetPostThreadResponse> {
   return fetchJson<GetPostThreadResponse>("app.bsky.feed.getPostThread", {
     uri: atUri,
-    depth: "1000",
+    depth: "1",
+    parentHeight: "1",
   });
 }
 
@@ -197,6 +198,9 @@ export function getEngagement(post: FeedPost): number {
 
 export function getResponseRatio(post: FeedPost): number {
   const numerator = (post.quoteCount ?? 0) + (post.replyCount ?? 0);
+  if (numerator < 1) {
+    return 0;
+  }
 
   const denominator = (post.likeCount ?? 0) + (post.repostCount ?? 0);
 
@@ -282,6 +286,76 @@ function maybePushImages(value: unknown, bucket: PostImage[]): void {
   }
 }
 
+function maybePushOwnImages(value: unknown, bucket: PostImage[]): void {
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  const candidate = value as {
+    images?: unknown[];
+    media?: unknown;
+    embeds?: unknown[];
+  };
+
+  if (Array.isArray(candidate.images)) {
+    for (const item of candidate.images) {
+      if (item && typeof item === "object") {
+        const image = item as {
+          thumb?: string;
+          fullsize?: string;
+          alt?: string;
+        };
+        bucket.push({
+          thumb: image.thumb,
+          fullsize: image.fullsize,
+          alt: image.alt,
+        });
+      }
+    }
+  }
+
+  // `media` is still owned by the current post in recordWithMedia views.
+  maybePushOwnImages(candidate.media, bucket);
+
+  if (Array.isArray(candidate.embeds)) {
+    candidate.embeds.forEach((embed) => maybePushOwnImages(embed, bucket));
+  }
+}
+
+function hasOwnVideo(value: unknown): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as {
+    $type?: unknown;
+    playlist?: unknown;
+    media?: unknown;
+    embeds?: unknown[];
+  };
+
+  if (
+    typeof candidate.$type === "string" &&
+    candidate.$type.includes("embed.video")
+  ) {
+    return true;
+  }
+
+  if (typeof candidate.playlist === "string") {
+    return true;
+  }
+
+  if (hasOwnVideo(candidate.media)) {
+    return true;
+  }
+
+  if (Array.isArray(candidate.embeds)) {
+    return candidate.embeds.some((embed) => hasOwnVideo(embed));
+  }
+
+  return false;
+}
+
 export function extractImages(post: FeedPost): PostImage[] {
   const images: PostImage[] = [];
   maybePushImages(post.embed, images);
@@ -291,6 +365,33 @@ export function extractImages(post: FeedPost): PostImage[] {
   }
 
   return images.filter((image) => image.thumb || image.fullsize);
+}
+
+export function extractOwnImages(post: FeedPost): PostImage[] {
+  const images: PostImage[] = [];
+  maybePushOwnImages(post.embed, images);
+
+  if (Array.isArray(post.embeds)) {
+    post.embeds.forEach((embed) => maybePushOwnImages(embed, images));
+  }
+
+  return images.filter((image) => image.thumb || image.fullsize);
+}
+
+export function hasOwnMedia(post: FeedPost): boolean {
+  if (extractOwnImages(post).length > 0) {
+    return true;
+  }
+
+  if (hasOwnVideo(post.embed)) {
+    return true;
+  }
+
+  if (Array.isArray(post.embeds)) {
+    return post.embeds.some((embed) => hasOwnVideo(embed));
+  }
+
+  return false;
 }
 
 function getSortValue(post: FeedPost, sortField: SortField): number {

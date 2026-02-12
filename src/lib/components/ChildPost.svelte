@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getEngagement, getPostTimestamp, getResponseRatio, type FeedPost } from '$lib/bluesky';
+  import { extractOwnImages, getEngagement, getPostTimestamp, getResponseRatio, type FeedPost } from '$lib/bluesky';
   import { formatCompactCount, formatIsoTimestamp, formatRatio, humanTimeDurationFormatter } from '$lib/formatting';
 
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -9,6 +9,8 @@
   export let post: FeedPost;
   export let rootPostTimestampMs: number;
   export let rootPostTimestamp: string | undefined;
+  $: firstImage = extractOwnImages(post)[0];
+  $: firstImageUrl = firstImage?.fullsize ?? firstImage?.thumb;
 
   function getPostText(value: FeedPost): string {
     return value.record?.text?.trim() || '(No text in payload)';
@@ -67,6 +69,34 @@
     }
 
     return (responseMs - rootPostTimestampMs) / (24 * 365 * 60 * 60 * 1000);
+  }
+
+  function responseYearPrefix(value: FeedPost): string {
+    const lagYears = responseLagYearsFromRoot(value);
+    if (lagYears === null || lagYears < 1) {
+      return '';
+    }
+
+    const responseMs = Date.parse(getPostTimestamp(value));
+    if (!Number.isFinite(responseMs)) {
+      return '';
+    }
+
+    return `in ${new Date(responseMs).getFullYear()} `;
+  }
+
+  function joinedYearPrefix(value: FeedPost): string {
+    const ageDays = getAccountAgeDaysRelativeToPost(value);
+    if (ageDays === null || Math.abs(ageDays) < 365) {
+      return '';
+    }
+
+    const createdAtMs = Date.parse(value.author.createdAt ?? '');
+    if (!Number.isFinite(createdAtMs)) {
+      return '';
+    }
+
+    return `in ${new Date(createdAtMs).getFullYear()} `;
   }
 
 
@@ -135,23 +165,19 @@
       <p class="author-created">
         <span>
           Responded
-          {#if responseLagYearsFromRoot(post) >= 1 }
-            in {new Date(getPostTimestamp(post)).getFullYear()}
-          {/if}
+          {responseYearPrefix(post)}
           <a
             href={toPostUrl(post)}
             target="_blank"
             rel="noreferrer"
             class="duration-hint"
-            title={formatIsoTimestamp(getPostTimestamp(post))}
+            title={formatIsoTimestamp(rootPostTimestamp)}
             >{responseLagLabel(post)}</a
           >.
         </span>
         <span>
           Joined Bluesky
-          {#if Math.abs(getAccountAgeDaysRelativeToPost(post)) >= 365 }
-            in {new Date(post.author.createdAt).getFullYear()}
-          {/if}
+          {joinedYearPrefix(post)}
           <span class="duration-hint" title={formatIsoTimestamp(post.author.createdAt)}
             >{joinedAgeLabel(post)} post</span
           >.
@@ -161,6 +187,11 @@
   </div>
 </header>
 <p class="item-text">{getPostText(post)}</p>
+{#if firstImageUrl}
+  <div class="child-media">
+    <img src={firstImageUrl} alt={firstImage?.alt ?? 'Embedded media'} loading="lazy" />
+  </div>
+{/if}
 <div class="item-stats-line">
   <span class="summary-stat">
     <span class="stat stat-engagements"><strong>{formatCompactCount(getEngagement(post))}</strong> engagements</span>
