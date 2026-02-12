@@ -22,10 +22,11 @@
 <section class="panel filter-panel">
   <h2>List Filters</h2>
   <div class="filter-stack">
-    <label class="filter-row">
-      <span>Sort by</span>
+    <div class="filter-row sort-row">
+      <span class="filter-label">Sort by</span>
       <button type="button" class="ghost sort-direction-toggle" on:click={toggleSortDirection}>{sortDirection}</button>
-      <select bind:value={sortBy}>
+      <label class="sr-only" for="sort-by-select">Sort field</label>
+      <select id="sort-by-select" bind:value={sortBy}>
         <option value="engagement">Engagement</option>
         <option value="ratio">Ratio</option>
         <option value="timestamp">Timestamp</option>
@@ -33,11 +34,12 @@
         <option value="likesPlusReposts">Likes + Reposts</option>
         <option value="repliesPlusQuotes">Replies + Quotes</option>
       </select>
-    </label>
+    </div>
 
-    <label class="filter-row">
-      <span>Must have at least</span>
+    <label class="filter-row" for="min-engagement-input">
+      <span class="filter-label">Must have at least</span>
       <input
+        id="min-engagement-input"
         type="number"
         min="0"
         step="1"
@@ -45,12 +47,13 @@
         placeholder="(any)"
         on:input={notifyFilterInput}
       />
-      <span>engagements</span>
+      <span class="filter-suffix">engagements</span>
     </label>
 
-    <label class="filter-row">
-      <span>Account must be at least</span>
+    <label class="filter-row" for="account-older-input">
+      <span class="filter-label">Account must be at least</span>
       <input
+        id="account-older-input"
         type="number"
         min="0"
         step="1"
@@ -58,12 +61,12 @@
         placeholder="(off)"
         on:input={notifyFilterInput}
       />
-      <span>days older than the post</span>
+      <span class="filter-suffix">days older than the post</span>
     </label>
 
-    <label class="filter-row checkbox-row">
-      <input type="checkbox" bind:checked={hasMediaOnlyInput} on:change={notifyFilterInput} />
-      <span>Post has images/video</span>
+    <label class="filter-row checkbox-row" for="has-media-checkbox">
+      <input id="has-media-checkbox" type="checkbox" bind:checked={hasMediaOnlyInput} on:change={notifyFilterInput} />
+      <span class="filter-label">Post has images/video</span>
     </label>
   </div>
   <p class="filter-note">Empty or 0 values disable numeric filters. Enable "Post has images/video" to require media.</p>

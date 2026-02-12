@@ -23,12 +23,12 @@
   <section class="stats-block">
     <h3>Quotes</h3>
     <dl class="stats-list">
-      <div><dt>Collected</dt><dd>{formatCount(quoteCount)}</dd></div>
-      <div><dt>First hour</dt><dd>{formatCount(quoteFirstHourCount)}</dd></div>
-      <div><dt>First day</dt><dd>{formatCount(quoteFirstDayCount)}</dd></div>
-      <div><dt>Avg response time</dt><dd>{formatDurationFromHours(averageQuoteResponseHours)}</dd></div>
-      <div><dt>Avg quoter account age</dt><dd>{formatDurationFromDays(averageQuoteAccountAgeDays)}</dd></div>
-      <div>
+      <div class="stats-row"><dt>Collected</dt><dd>{formatCount(quoteCount)}</dd></div>
+      <div class="stats-row"><dt>First hour</dt><dd>{formatCount(quoteFirstHourCount)}</dd></div>
+      <div class="stats-row"><dt>First day</dt><dd>{formatCount(quoteFirstDayCount)}</dd></div>
+      <div class="stats-row"><dt>Avg response time</dt><dd>{formatDurationFromHours(averageQuoteResponseHours)}</dd></div>
+      <div class="stats-row"><dt>Avg quoter account age</dt><dd>{formatDurationFromDays(averageQuoteAccountAgeDays)}</dd></div>
+      <div class="stats-row stats-row-link">
         <dt>Most engaged quote by</dt>
         <dd>
           {#if highestEngagementQuote}
@@ -46,12 +46,12 @@
   <section class="stats-block">
     <h3>Replies</h3>
     <dl class="stats-list">
-      <div><dt>Collected</dt><dd>{formatCount(replyCount)}</dd></div>
-      <div><dt>First hour</dt><dd>{formatCount(replyFirstHourCount)}</dd></div>
-      <div><dt>First day</dt><dd>{formatCount(replyFirstDayCount)}</dd></div>
-      <div><dt>Avg response time</dt><dd>{formatDurationFromHours(averageReplyResponseHours)}</dd></div>
-      <div><dt>Avg replier account age</dt><dd>{formatDurationFromDays(averageReplyAccountAgeDays)}</dd></div>
-      <div>
+      <div class="stats-row"><dt>Collected</dt><dd>{formatCount(replyCount)}</dd></div>
+      <div class="stats-row"><dt>First hour</dt><dd>{formatCount(replyFirstHourCount)}</dd></div>
+      <div class="stats-row"><dt>First day</dt><dd>{formatCount(replyFirstDayCount)}</dd></div>
+      <div class="stats-row"><dt>Avg response time</dt><dd>{formatDurationFromHours(averageReplyResponseHours)}</dd></div>
+      <div class="stats-row"><dt>Avg replier account age</dt><dd>{formatDurationFromDays(averageReplyAccountAgeDays)}</dd></div>
+      <div class="stats-row stats-row-link">
         <dt>Most engaged reply by</dt>
         <dd>
           {#if highestEngagementReply}

@@ -16,16 +16,6 @@ function buildPost(overrides: Partial<FeedPost> = {}): FeedPost {
 }
 
 describe("getResponseRatio", () => {
-  it("forces ratio to 1 when replies+quotes is less than 1", () => {
-    const post = buildPost({
-      replyCount: 0,
-      quoteCount: 0,
-      likeCount: 50,
-      repostCount: 10,
-    });
-    expect(getResponseRatio(post)).toBe(1);
-  });
-
   it("forces ratio to 1 when denominator is 0", () => {
     const post = buildPost({
       replyCount: 4,
@@ -34,6 +24,16 @@ describe("getResponseRatio", () => {
       repostCount: 0,
     });
     expect(getResponseRatio(post)).toBe(1);
+  });
+
+  it("forces ratio to 2 when denominator >= 20", () => {
+    const post = buildPost({
+      replyCount: 10,
+      quoteCount: 10,
+      likeCount: 0,
+      repostCount: 0,
+    });
+    expect(getResponseRatio(post)).toBe(2);
   });
 
   it("uses numerator/denominator otherwise", () => {

@@ -198,13 +198,16 @@ export function getEngagement(post: FeedPost): number {
 
 export function getResponseRatio(post: FeedPost): number {
   const numerator = (post.quoteCount ?? 0) + (post.replyCount ?? 0);
-  if (numerator < 1) {
-    return 1;
-  }
 
   const denominator = (post.likeCount ?? 0) + (post.repostCount ?? 0);
   if (denominator === 0) {
-    return 1;
+    if (numerator < 3) {
+      return 0;
+    } else if (numerator >= 20) {
+      return 2;
+    } else {
+      return 1;
+    }
   }
 
   return numerator / denominator;
