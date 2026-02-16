@@ -19,6 +19,15 @@ export const PAGE_SIZE = 10;
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 
+export interface CollectionStats {
+  count: number;
+  firstHourCount: number;
+  firstDayCount: number;
+  avgResponseHours: number | null;
+  avgAccountAgeDays: number | null;
+  highestEngagement: FeedPost | null;
+}
+
 export interface FilterOptions {
   minEngagementThreshold: number | null;
   minAccountOlderDays: number | null;
@@ -209,6 +218,28 @@ export function highestEngagementPost(items: FeedPost[]): FeedPost | null {
   }
 
   return best;
+}
+
+export function computeCollectionStats(
+  posts: FeedPost[],
+  rootPostTimestampMs: number,
+): CollectionStats {
+  return {
+    count: posts.length,
+    firstHourCount: countItemsWithinWindow(
+      posts,
+      rootPostTimestampMs,
+      ONE_HOUR_MS,
+    ),
+    firstDayCount: countItemsWithinWindow(
+      posts,
+      rootPostTimestampMs,
+      MS_PER_DAY,
+    ),
+    avgResponseHours: averageResponseHoursFromPost(posts, rootPostTimestampMs),
+    avgAccountAgeDays: averageAccountAgeDaysAtPost(posts, rootPostTimestampMs),
+    highestEngagement: highestEngagementPost(posts),
+  };
 }
 
 function getSortValue(post: FeedPost, sortField: SortField): number {

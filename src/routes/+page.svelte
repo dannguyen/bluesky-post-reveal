@@ -8,13 +8,8 @@
   import { formatCount } from '$lib/formatting';
   import { extractImages, getPostTimestamp } from '$lib/bluesky';
   import {
-    MS_PER_DAY,
-    ONE_HOUR_MS,
-    averageAccountAgeDaysAtPost,
-    averageResponseHoursFromPost,
-    countItemsWithinWindow,
+    computeCollectionStats,
     getFilteredSortedPosts,
-    highestEngagementPost,
     normalizeOptionalPositive,
     type SortDirection,
     type SortField
@@ -32,69 +27,61 @@
   let minEngagementInput: number | '' = '';
   let accountOlderThanDaysInput: number | '' = '';
   let hasMediaOnlyInput = false;
-  let appliedMinEngagementInput: number | '' = '';
-  let appliedAccountOlderThanDaysInput: number | '' = '';
-  let appliedHasMediaOnlyInput = false;
+  let debouncedMinEngagement: number | '' = '';
+  let debouncedAccountOlderDays: number | '' = '';
+  let debouncedHasMediaOnly = false;
   let quotePage = 1;
   let replyPage = 1;
 
-  let filterApplyTimer: ReturnType<typeof setTimeout> | null = null;
-  let filterSignature = `${sortBy}:${sortDirection}:none:none:all-media`;
-  let lastFilterSignature = filterSignature;
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  $: minEngagementThreshold = normalizeOptionalPositive(appliedMinEngagementInput);
-  $: minAccountOlderDays = normalizeOptionalPositive(appliedAccountOlderThanDaysInput);
   $: rootImages = cs.postData ? extractImages(cs.postData) : [];
   $: rootPostTimestamp = cs.postData ? getPostTimestamp(cs.postData) : undefined;
   $: rootPostTimestampMs = Date.parse(rootPostTimestamp ?? '');
   $: filterOptions = {
-    minEngagementThreshold,
-    minAccountOlderDays,
-    requireOwnMedia: appliedHasMediaOnlyInput,
+    minEngagementThreshold: normalizeOptionalPositive(debouncedMinEngagement),
+    minAccountOlderDays: normalizeOptionalPositive(debouncedAccountOlderDays),
+    requireOwnMedia: debouncedHasMediaOnly,
     rootPostTimestampMs
   };
 
   $: sortedFilteredQuotes = getFilteredSortedPosts(cs.quotes, filterOptions, sortBy, sortDirection);
   $: sortedFilteredReplies = getFilteredSortedPosts(cs.replies, filterOptions, sortBy, sortDirection);
 
-  $: quoteFirstHourCount = countItemsWithinWindow(cs.quotes, rootPostTimestampMs, ONE_HOUR_MS);
-  $: quoteFirstDayCount = countItemsWithinWindow(cs.quotes, rootPostTimestampMs, MS_PER_DAY);
-  $: replyFirstHourCount = countItemsWithinWindow(cs.replies, rootPostTimestampMs, ONE_HOUR_MS);
-  $: replyFirstDayCount = countItemsWithinWindow(cs.replies, rootPostTimestampMs, MS_PER_DAY);
-
-  $: averageQuoteAccountAgeDays = averageAccountAgeDaysAtPost(cs.quotes, rootPostTimestampMs);
-  $: averageReplyAccountAgeDays = averageAccountAgeDaysAtPost(cs.replies, rootPostTimestampMs);
-  $: averageQuoteResponseHours = averageResponseHoursFromPost(cs.quotes, rootPostTimestampMs);
-  $: averageReplyResponseHours = averageResponseHoursFromPost(cs.replies, rootPostTimestampMs);
-
-  $: highestEngagementQuote = highestEngagementPost(cs.quotes);
-  $: highestEngagementReply = highestEngagementPost(cs.replies);
+  $: quoteStats = computeCollectionStats(cs.quotes, rootPostTimestampMs);
+  $: replyStats = computeCollectionStats(cs.replies, rootPostTimestampMs);
 
   $: statusLabel = cs.isBootstrapping || cs.isPolling ? 'fetching' : cs.hasReachedFinalQuoteCursor ? 'complete' : cs.pollStatus.toLowerCase();
 
-  $: filterSignature = `${sortBy}:${sortDirection}:${minEngagementThreshold ?? 'none'}:${minAccountOlderDays ?? 'none'}:${appliedHasMediaOnlyInput ? 'media-only' : 'all-media'}`;
-  $: if (filterSignature !== lastFilterSignature) {
-    quotePage = 1;
-    replyPage = 1;
-    lastFilterSignature = filterSignature;
+  // Reset pagination when sort changes
+  let lastSortKey = `${sortBy}:${sortDirection}`;
+  $: {
+    const sortKey = `${sortBy}:${sortDirection}`;
+    if (sortKey !== lastSortKey) {
+      lastSortKey = sortKey;
+      quotePage = 1;
+      replyPage = 1;
+    }
   }
 
   onDestroy(() => {
     collector.destroy();
-    if (filterApplyTimer) {
-      clearTimeout(filterApplyTimer);
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
     }
   });
 
   function scheduleFilterApply(): void {
-    if (filterApplyTimer) {
-      clearTimeout(filterApplyTimer);
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
     }
 
-    filterApplyTimer = setTimeout(() => {
-      appliedMinEngagementInput = minEngagementInput;
-      appliedAccountOlderThanDaysInput = accountOlderThanDaysInput;
-      appliedHasMediaOnlyInput = hasMediaOnlyInput;
+    debounceTimer = setTimeout(() => {
+      debouncedMinEngagement = minEngagementInput;
+      debouncedAccountOlderDays = accountOlderThanDaysInput;
+      debouncedHasMediaOnly = hasMediaOnlyInput;
+      quotePage = 1;
+      replyPage = 1;
     }, 500);
   }
 </script>
@@ -151,20 +138,7 @@
       </div>
 
       <div in:fly={{ y: 12, duration: 240, delay: 40 }}>
-        <LiveStatsPanel
-          quoteCount={cs.quotes.length}
-          {quoteFirstHourCount}
-          {quoteFirstDayCount}
-          averageQuoteResponseHours={averageQuoteResponseHours}
-          averageQuoteAccountAgeDays={averageQuoteAccountAgeDays}
-          {highestEngagementQuote}
-          replyCount={cs.replies.length}
-          {replyFirstHourCount}
-          {replyFirstDayCount}
-          averageReplyResponseHours={averageReplyResponseHours}
-          averageReplyAccountAgeDays={averageReplyAccountAgeDays}
-          {highestEngagementReply}
-        />
+        <LiveStatsPanel {quoteStats} {replyStats} />
       </div>
     </div>
 

@@ -120,7 +120,7 @@ describe("getFilteredSortedPosts", () => {
         embed: {
           $type: "app.bsky.embed.images#view",
           images: [{ thumb: "thumb.jpg", fullsize: "full.jpg" }],
-        } as unknown,
+        },
         author: {
           did: "did:old3",
           handle: "old3",

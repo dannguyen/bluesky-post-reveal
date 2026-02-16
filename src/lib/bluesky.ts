@@ -1,71 +1,32 @@
+export type {
+  Author,
+  EmbedRecord,
+  EmbedView,
+  FeedPost,
+  GetPostsResponse,
+  GetPostThreadResponse,
+  GetQuotesResponse,
+  ParsedPostUrl,
+  PostImage,
+  PostRecord,
+  ResolveHandleResponse,
+  ThreadView,
+} from "$lib/bluesky-types";
+
+import type {
+  EmbedView,
+  FeedPost,
+  GetPostsResponse,
+  GetPostThreadResponse,
+  GetQuotesResponse,
+  ParsedPostUrl,
+  PostImage,
+  ResolveHandleResponse,
+  ThreadView,
+} from "$lib/bluesky-types";
+
 export const BSKY_PUBLIC_API = "https://public.api.bsky.app/xrpc";
 export const CALL_DELAY_MS = 200;
-
-export interface Author {
-  did: string;
-  handle: string;
-  displayName?: string;
-  avatar?: string;
-  createdAt?: string;
-}
-
-export interface PostRecord {
-  createdAt?: string;
-  text?: string;
-  reply?: {
-    root?: { uri?: string };
-    parent?: { uri?: string };
-  };
-}
-
-export interface FeedPost {
-  uri: string;
-  cid?: string;
-  author: Author;
-  record?: PostRecord;
-  embed?: unknown;
-  embeds?: unknown[];
-  replyCount?: number;
-  repostCount?: number;
-  quoteCount?: number;
-  likeCount?: number;
-  indexedAt?: string;
-}
-
-export interface ResolveHandleResponse {
-  did: string;
-}
-
-export interface GetPostsResponse {
-  posts: FeedPost[];
-}
-
-export interface GetQuotesResponse {
-  posts?: FeedPost[];
-  cursor?: string;
-}
-
-export interface ThreadView {
-  post?: FeedPost;
-  replies?: ThreadView[];
-  [key: string]: unknown;
-}
-
-export interface GetPostThreadResponse {
-  thread?: ThreadView;
-}
-
-export interface ParsedPostUrl {
-  sourceUrl: string;
-  handle: string;
-  rkey: string;
-}
-
-export interface PostImage {
-  thumb?: string;
-  fullsize?: string;
-  alt?: string;
-}
 
 async function fetchJson<T>(
   method: string,
@@ -232,113 +193,88 @@ export function extractReplies(
 }
 
 function collectEmbedImages(
-  value: unknown,
+  embed: EmbedView | undefined,
   bucket: PostImage[],
   includeQuotedRecord: boolean,
 ): void {
-  if (!value || typeof value !== "object") {
+  if (!embed) {
     return;
   }
 
-  const candidate = value as {
-    images?: unknown[];
-    media?: unknown;
-    record?: unknown;
-    embeds?: unknown[];
-  };
-
-  if (Array.isArray(candidate.images)) {
-    for (const item of candidate.images) {
-      if (item && typeof item === "object") {
-        const image = item as {
-          thumb?: string;
-          fullsize?: string;
-          alt?: string;
-        };
-        bucket.push({
-          thumb: image.thumb,
-          fullsize: image.fullsize,
-          alt: image.alt,
-        });
-      }
+  if (embed.images) {
+    for (const image of embed.images) {
+      bucket.push({
+        thumb: image.thumb,
+        fullsize: image.fullsize,
+        alt: image.alt,
+      });
     }
   }
 
-  collectEmbedImages(candidate.media, bucket, includeQuotedRecord);
+  collectEmbedImages(embed.media, bucket, includeQuotedRecord);
 
-  if (
-    includeQuotedRecord &&
-    candidate.record &&
-    typeof candidate.record === "object"
-  ) {
-    const record = candidate.record as { embeds?: unknown[]; media?: unknown };
-    if (Array.isArray(record.embeds)) {
-      record.embeds.forEach((embed) => collectEmbedImages(embed, bucket, true));
+  if (includeQuotedRecord && embed.record) {
+    if (embed.record.embeds) {
+      embed.record.embeds.forEach((nested) =>
+        collectEmbedImages(nested, bucket, true),
+      );
     }
-    collectEmbedImages(record.media, bucket, true);
+    collectEmbedImages(embed.record.media, bucket, true);
   }
 
-  if (Array.isArray(candidate.embeds)) {
-    candidate.embeds.forEach((embed) =>
-      collectEmbedImages(embed, bucket, includeQuotedRecord),
+  if (embed.embeds) {
+    embed.embeds.forEach((nested) =>
+      collectEmbedImages(nested, bucket, includeQuotedRecord),
     );
   }
 }
 
-function hasOwnVideo(value: unknown): boolean {
-  if (!value || typeof value !== "object") {
+function hasOwnVideo(embed: EmbedView | undefined): boolean {
+  if (!embed) {
     return false;
   }
 
-  const candidate = value as {
-    $type?: unknown;
-    playlist?: unknown;
-    media?: unknown;
-    embeds?: unknown[];
-  };
-
-  if (
-    typeof candidate.$type === "string" &&
-    candidate.$type.includes("embed.video")
-  ) {
+  if (embed.$type?.includes("embed.video")) {
     return true;
   }
 
-  if (typeof candidate.playlist === "string") {
+  if (embed.playlist) {
     return true;
   }
 
-  if (hasOwnVideo(candidate.media)) {
+  if (hasOwnVideo(embed.media)) {
     return true;
   }
 
-  if (Array.isArray(candidate.embeds)) {
-    return candidate.embeds.some((embed) => hasOwnVideo(embed));
+  if (embed.embeds) {
+    return embed.embeds.some((nested) => hasOwnVideo(nested));
   }
 
   return false;
 }
 
-export function extractImages(post: FeedPost): PostImage[] {
+function collectPostImages(
+  post: FeedPost,
+  includeQuotedRecord: boolean,
+): PostImage[] {
   const images: PostImage[] = [];
-  collectEmbedImages(post.embed, images, true);
+  collectEmbedImages(post.embed, images, includeQuotedRecord);
 
   if (Array.isArray(post.embeds)) {
-    post.embeds.forEach((embed) => collectEmbedImages(embed, images, true));
+    post.embeds.forEach((embed) =>
+      collectEmbedImages(embed, images, includeQuotedRecord),
+    );
   }
 
   return images.filter((image) => image.thumb || image.fullsize);
 }
 
+export function extractImages(post: FeedPost): PostImage[] {
+  return collectPostImages(post, true);
+}
+
 export function extractOwnImages(post: FeedPost): PostImage[] {
-  const images: PostImage[] = [];
-  collectEmbedImages(post.embed, images, false);
-
-  if (Array.isArray(post.embeds)) {
-    post.embeds.forEach((embed) => collectEmbedImages(embed, images, false));
-  }
-
-  return images.filter((image) => image.thumb || image.fullsize);
+  return collectPostImages(post, false);
 }
 
 export function hasOwnMedia(post: FeedPost): boolean {
@@ -350,11 +286,7 @@ export function hasOwnMedia(post: FeedPost): boolean {
     return true;
   }
 
-  if (Array.isArray(post.embeds)) {
-    return post.embeds.some((embed) => hasOwnVideo(embed));
-  }
-
-  return false;
+  return post.embeds?.some((embed) => hasOwnVideo(embed)) ?? false;
 }
 
 export function toPostUrl(post: FeedPost): string {

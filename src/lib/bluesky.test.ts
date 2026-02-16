@@ -4,6 +4,7 @@ import {
   extractOwnImages,
   getResponseRatio,
   hasOwnMedia,
+  type EmbedView,
   type FeedPost,
 } from "./bluesky";
 
@@ -49,25 +50,27 @@ describe("getResponseRatio", () => {
 
 describe("own media extraction", () => {
   it("does not treat quoted record images as own images", () => {
-    const post = buildPost({
-      embed: {
-        $type: "app.bsky.embed.recordWithMedia#view",
-        record: {
-          value: {
-            embed: {
-              $type: "app.bsky.embed.images#view",
-              images: [
-                {
-                  thumb: "quoted-thumb.jpg",
-                  fullsize: "quoted-full.jpg",
-                  alt: "quoted",
-                },
-              ],
-            },
+    // The real API nests quoted content under record.value.embed, but our
+    // EmbedRecord type only looks at record.embeds and record.media.
+    // Images buried under record.value are intentionally unreachable.
+    const embed: EmbedView = {
+      $type: "app.bsky.embed.recordWithMedia#view",
+      record: {
+        embeds: [
+          {
+            $type: "app.bsky.embed.images#view",
+            images: [
+              {
+                thumb: "quoted-thumb.jpg",
+                fullsize: "quoted-full.jpg",
+                alt: "quoted",
+              },
+            ],
           },
-        },
-      } as unknown,
-    });
+        ],
+      },
+    };
+    const post = buildPost({ embed });
 
     expect(extractOwnImages(post)).toHaveLength(0);
     expect(hasOwnMedia(post)).toBe(false);
@@ -84,14 +87,14 @@ describe("own media extraction", () => {
             alt: "own image",
           },
         ],
-      } as unknown,
+      },
     });
 
     const videoPost = buildPost({
       embed: {
         $type: "app.bsky.embed.video#view",
         playlist: "https://cdn.example/video.m3u8",
-      } as unknown,
+      },
     });
 
     expect(extractOwnImages(imagePost)).toHaveLength(1);

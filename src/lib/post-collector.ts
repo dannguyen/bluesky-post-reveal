@@ -13,13 +13,13 @@ import {
   type GetQuotesResponse,
   type ParsedPostUrl,
 } from "$lib/bluesky";
+import { mergePostsByUri } from "$lib/post-analysis";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
-import { mergePostsByUri } from "$lib/post-analysis";
 
 export interface CollectorState {
   normalizedUrl: string;
