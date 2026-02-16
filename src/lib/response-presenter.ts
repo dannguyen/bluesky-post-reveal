@@ -5,8 +5,10 @@ import {
   type FeedPost,
 } from "$lib/bluesky";
 import { humanTimeDurationFormatter } from "$lib/formatting";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+import {
+  getAccountAgeDaysRelativeToPost,
+  ONE_HOUR_MS,
+} from "$lib/post-analysis";
 const AUTHOR_NAME_MAX_CHARS = 40;
 const AUTHOR_HANDLE_MAX_CHARS = 60;
 
@@ -79,22 +81,7 @@ function responseLagHoursFromRoot(
     return null;
   }
 
-  return (responseMs - rootPostTimestampMs) / (60 * 60 * 1000);
-}
-
-function getAccountAgeDaysRelativeToPost(
-  post: FeedPost,
-  rootPostTimestampMs: number,
-): number | null {
-  const authorCreatedAtMs = Date.parse(post.author.createdAt ?? "");
-  if (
-    !Number.isFinite(rootPostTimestampMs) ||
-    !Number.isFinite(authorCreatedAtMs)
-  ) {
-    return null;
-  }
-
-  return (rootPostTimestampMs - authorCreatedAtMs) / MS_PER_DAY;
+  return (responseMs - rootPostTimestampMs) / ONE_HOUR_MS;
 }
 
 function truncateWithEllipsis(value: string, maxChars: number): string {
@@ -102,5 +89,5 @@ function truncateWithEllipsis(value: string, maxChars: number): string {
     return value;
   }
 
-  return `${value.slice(0, maxChars - 1)}...`;
+  return `${value.slice(0, maxChars - 3)}...`;
 }

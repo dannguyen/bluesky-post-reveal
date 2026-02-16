@@ -6,33 +6,26 @@
   import PostDetailsPanel from '$lib/components/PostDetailsPanel.svelte';
   import PostListColumn from '$lib/components/PostListColumn.svelte';
   import { formatCount } from '$lib/formatting';
-  import { extractImages, getPostTimestamp, type FeedPost, type SortDirection, type SortField } from '$lib/bluesky';
+  import { extractImages, getPostTimestamp } from '$lib/bluesky';
   import {
-    ONE_DAY_MS,
+    MS_PER_DAY,
     ONE_HOUR_MS,
     averageAccountAgeDaysAtPost,
     averageResponseHoursFromPost,
     countItemsWithinWindow,
     getFilteredSortedPosts,
     highestEngagementPost,
-    normalizeOptionalPositive
+    normalizeOptionalPositive,
+    type SortDirection,
+    type SortField
   } from '$lib/post-analysis';
   import { createPostCollector } from '$lib/post-collector';
 
   const collector = createPostCollector();
   const collectorState = collector.state;
+  $: cs = $collectorState;
 
   let inputUrl = 'https://bsky.app/profile/jimmyfallon.bsky.social/post/3jvuuju3amj2i';
-
-  let postData: FeedPost | null = null;
-  let quotes: FeedPost[] = [];
-  let replies: FeedPost[] = [];
-  let isBootstrapping = false;
-  let isPolling = false;
-  let isUserPaused = false;
-  let hasReachedFinalQuoteCursor = false;
-  let pollStatus = 'Idle';
-  let errorMessage = '';
 
   let sortBy: SortField = 'engagement';
   let sortDirection: SortDirection = 'biggest';
@@ -49,20 +42,10 @@
   let filterSignature = `${sortBy}:${sortDirection}:none:none:all-media`;
   let lastFilterSignature = filterSignature;
 
-  $: postData = $collectorState.postData;
-  $: quotes = $collectorState.quotes;
-  $: replies = $collectorState.replies;
-  $: isBootstrapping = $collectorState.isBootstrapping;
-  $: isPolling = $collectorState.isPolling;
-  $: isUserPaused = $collectorState.isUserPaused;
-  $: hasReachedFinalQuoteCursor = $collectorState.hasReachedFinalQuoteCursor;
-  $: pollStatus = $collectorState.pollStatus;
-  $: errorMessage = $collectorState.errorMessage;
-
   $: minEngagementThreshold = normalizeOptionalPositive(appliedMinEngagementInput);
   $: minAccountOlderDays = normalizeOptionalPositive(appliedAccountOlderThanDaysInput);
-  $: rootImages = postData ? extractImages(postData) : [];
-  $: rootPostTimestamp = postData ? getPostTimestamp(postData) : undefined;
+  $: rootImages = cs.postData ? extractImages(cs.postData) : [];
+  $: rootPostTimestamp = cs.postData ? getPostTimestamp(cs.postData) : undefined;
   $: rootPostTimestampMs = Date.parse(rootPostTimestamp ?? '');
   $: filterOptions = {
     minEngagementThreshold,
@@ -71,23 +54,23 @@
     rootPostTimestampMs
   };
 
-  $: sortedFilteredQuotes = getFilteredSortedPosts(quotes, filterOptions, sortBy, sortDirection);
-  $: sortedFilteredReplies = getFilteredSortedPosts(replies, filterOptions, sortBy, sortDirection);
+  $: sortedFilteredQuotes = getFilteredSortedPosts(cs.quotes, filterOptions, sortBy, sortDirection);
+  $: sortedFilteredReplies = getFilteredSortedPosts(cs.replies, filterOptions, sortBy, sortDirection);
 
-  $: quoteFirstHourCount = countItemsWithinWindow(quotes, rootPostTimestampMs, ONE_HOUR_MS);
-  $: quoteFirstDayCount = countItemsWithinWindow(quotes, rootPostTimestampMs, ONE_DAY_MS);
-  $: replyFirstHourCount = countItemsWithinWindow(replies, rootPostTimestampMs, ONE_HOUR_MS);
-  $: replyFirstDayCount = countItemsWithinWindow(replies, rootPostTimestampMs, ONE_DAY_MS);
+  $: quoteFirstHourCount = countItemsWithinWindow(cs.quotes, rootPostTimestampMs, ONE_HOUR_MS);
+  $: quoteFirstDayCount = countItemsWithinWindow(cs.quotes, rootPostTimestampMs, MS_PER_DAY);
+  $: replyFirstHourCount = countItemsWithinWindow(cs.replies, rootPostTimestampMs, ONE_HOUR_MS);
+  $: replyFirstDayCount = countItemsWithinWindow(cs.replies, rootPostTimestampMs, MS_PER_DAY);
 
-  $: averageQuoteAccountAgeDays = averageAccountAgeDaysAtPost(quotes, rootPostTimestampMs);
-  $: averageReplyAccountAgeDays = averageAccountAgeDaysAtPost(replies, rootPostTimestampMs);
-  $: averageQuoteResponseHours = averageResponseHoursFromPost(quotes, rootPostTimestampMs);
-  $: averageReplyResponseHours = averageResponseHoursFromPost(replies, rootPostTimestampMs);
+  $: averageQuoteAccountAgeDays = averageAccountAgeDaysAtPost(cs.quotes, rootPostTimestampMs);
+  $: averageReplyAccountAgeDays = averageAccountAgeDaysAtPost(cs.replies, rootPostTimestampMs);
+  $: averageQuoteResponseHours = averageResponseHoursFromPost(cs.quotes, rootPostTimestampMs);
+  $: averageReplyResponseHours = averageResponseHoursFromPost(cs.replies, rootPostTimestampMs);
 
-  $: highestEngagementQuote = highestEngagementPost(quotes);
-  $: highestEngagementReply = highestEngagementPost(replies);
+  $: highestEngagementQuote = highestEngagementPost(cs.quotes);
+  $: highestEngagementReply = highestEngagementPost(cs.replies);
 
-  $: statusLabel = isBootstrapping || isPolling ? 'fetching' : hasReachedFinalQuoteCursor ? 'complete' : pollStatus.toLowerCase();
+  $: statusLabel = cs.isBootstrapping || cs.isPolling ? 'fetching' : cs.hasReachedFinalQuoteCursor ? 'complete' : cs.pollStatus.toLowerCase();
 
   $: filterSignature = `${sortBy}:${sortDirection}:${minEngagementThreshold ?? 'none'}:${minAccountOlderDays ?? 'none'}:${appliedHasMediaOnlyInput ? 'media-only' : 'all-media'}`;
   $: if (filterSignature !== lastFilterSignature) {
@@ -130,52 +113,52 @@
     >
       <label class="sr-only" for="post-url">Bluesky post URL</label>
       <input id="post-url" type="url" bind:value={inputUrl} placeholder="https://bsky.app/profile/.../post/..." />
-      <button type="submit" disabled={isBootstrapping}>{isBootstrapping ? 'Loading...' : 'Get Post Data'}</button>
+      <button type="submit" disabled={cs.isBootstrapping}>{cs.isBootstrapping ? 'Loading...' : 'Get Post Data'}</button>
     </form>
 
     <div class="action-grid">
-      {#if postData && (isPolling || isUserPaused)}
+      {#if cs.postData && (cs.isPolling || cs.isUserPaused)}
         <button
           type="button"
           class="ghost"
           on:click={() => {
-            if (isPolling) {
+            if (cs.isPolling) {
               collector.pause();
             } else {
               void collector.resume();
             }
-          }}>{isPolling ? 'Pause Polling' : 'Resume Polling'}</button
+          }}>{cs.isPolling ? 'Pause Polling' : 'Resume Polling'}</button
         >
       {/if}
-      <button type="button" class="ghost" on:click={() => collector.downloadSnapshot(inputUrl)} disabled={!postData}
+      <button type="button" class="ghost" on:click={() => collector.downloadSnapshot(inputUrl)} disabled={!cs.postData}
         >Download JSON</button
       >
     </div>
 
     <p class="collection-status">
-      Collected {formatCount(quotes.length)} quotes and {formatCount(replies.length)} replies. [{statusLabel}]
+      Collected {formatCount(cs.quotes.length)} quotes and {formatCount(cs.replies.length)} replies. [{statusLabel}]
     </p>
 
-    {#if errorMessage}
-      <p class="error">{errorMessage}</p>
+    {#if cs.errorMessage}
+      <p class="error">{cs.errorMessage}</p>
     {/if}
   </section>
 
-  {#if postData}
+  {#if cs.postData}
     <div class="post-stats-grid" in:fade={{ duration: 220 }} out:fade={{ duration: 180 }}>
       <div in:fly={{ y: 12, duration: 240 }}>
-        <PostDetailsPanel post={postData} images={rootImages} />
+        <PostDetailsPanel post={cs.postData} images={rootImages} />
       </div>
 
       <div in:fly={{ y: 12, duration: 240, delay: 40 }}>
         <LiveStatsPanel
-          quoteCount={quotes.length}
+          quoteCount={cs.quotes.length}
           {quoteFirstHourCount}
           {quoteFirstDayCount}
           averageQuoteResponseHours={averageQuoteResponseHours}
           averageQuoteAccountAgeDays={averageQuoteAccountAgeDays}
           {highestEngagementQuote}
-          replyCount={replies.length}
+          replyCount={cs.replies.length}
           {replyFirstHourCount}
           {replyFirstDayCount}
           averageReplyResponseHours={averageReplyResponseHours}

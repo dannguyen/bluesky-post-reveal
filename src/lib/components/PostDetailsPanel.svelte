@@ -1,7 +1,7 @@
 <script lang="ts">
   import { formatCount, formatTimestamp } from '$lib/formatting';
   import { getPostTimestamp, type FeedPost, type PostImage } from '$lib/bluesky';
-  import { getPostText } from '$lib/child-post-presenter';
+  import { getPostText } from '$lib/response-presenter';
 
   export let post: FeedPost;
   export let images: PostImage[] = [];

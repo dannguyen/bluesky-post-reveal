@@ -1,15 +1,6 @@
 export const BSKY_PUBLIC_API = "https://public.api.bsky.app/xrpc";
 export const CALL_DELAY_MS = 200;
 
-export type SortField =
-  | "engagement"
-  | "ratio"
-  | "timestamp"
-  | "authorAge"
-  | "likesPlusReposts"
-  | "repliesPlusQuotes";
-export type SortDirection = "biggest" | "smallest";
-
 export interface Author {
   did: string;
   handle: string;
@@ -240,7 +231,11 @@ export function extractReplies(
   return replies;
 }
 
-function maybePushImages(value: unknown, bucket: PostImage[]): void {
+function collectEmbedImages(
+  value: unknown,
+  bucket: PostImage[],
+  includeQuotedRecord: boolean,
+): void {
   if (!value || typeof value !== "object") {
     return;
   }
@@ -269,54 +264,24 @@ function maybePushImages(value: unknown, bucket: PostImage[]): void {
     }
   }
 
-  maybePushImages(candidate.media, bucket);
+  collectEmbedImages(candidate.media, bucket, includeQuotedRecord);
 
-  if (candidate.record && typeof candidate.record === "object") {
+  if (
+    includeQuotedRecord &&
+    candidate.record &&
+    typeof candidate.record === "object"
+  ) {
     const record = candidate.record as { embeds?: unknown[]; media?: unknown };
     if (Array.isArray(record.embeds)) {
-      record.embeds.forEach((embed) => maybePushImages(embed, bucket));
+      record.embeds.forEach((embed) => collectEmbedImages(embed, bucket, true));
     }
-    maybePushImages(record.media, bucket);
+    collectEmbedImages(record.media, bucket, true);
   }
 
   if (Array.isArray(candidate.embeds)) {
-    candidate.embeds.forEach((embed) => maybePushImages(embed, bucket));
-  }
-}
-
-function maybePushOwnImages(value: unknown, bucket: PostImage[]): void {
-  if (!value || typeof value !== "object") {
-    return;
-  }
-
-  const candidate = value as {
-    images?: unknown[];
-    media?: unknown;
-    embeds?: unknown[];
-  };
-
-  if (Array.isArray(candidate.images)) {
-    for (const item of candidate.images) {
-      if (item && typeof item === "object") {
-        const image = item as {
-          thumb?: string;
-          fullsize?: string;
-          alt?: string;
-        };
-        bucket.push({
-          thumb: image.thumb,
-          fullsize: image.fullsize,
-          alt: image.alt,
-        });
-      }
-    }
-  }
-
-  // `media` is still owned by the current post in recordWithMedia views.
-  maybePushOwnImages(candidate.media, bucket);
-
-  if (Array.isArray(candidate.embeds)) {
-    candidate.embeds.forEach((embed) => maybePushOwnImages(embed, bucket));
+    candidate.embeds.forEach((embed) =>
+      collectEmbedImages(embed, bucket, includeQuotedRecord),
+    );
   }
 }
 
@@ -356,10 +321,10 @@ function hasOwnVideo(value: unknown): boolean {
 
 export function extractImages(post: FeedPost): PostImage[] {
   const images: PostImage[] = [];
-  maybePushImages(post.embed, images);
+  collectEmbedImages(post.embed, images, true);
 
   if (Array.isArray(post.embeds)) {
-    post.embeds.forEach((embed) => maybePushImages(embed, images));
+    post.embeds.forEach((embed) => collectEmbedImages(embed, images, true));
   }
 
   return images.filter((image) => image.thumb || image.fullsize);
@@ -367,10 +332,10 @@ export function extractImages(post: FeedPost): PostImage[] {
 
 export function extractOwnImages(post: FeedPost): PostImage[] {
   const images: PostImage[] = [];
-  maybePushOwnImages(post.embed, images);
+  collectEmbedImages(post.embed, images, false);
 
   if (Array.isArray(post.embeds)) {
-    post.embeds.forEach((embed) => maybePushOwnImages(embed, images));
+    post.embeds.forEach((embed) => collectEmbedImages(embed, images, false));
   }
 
   return images.filter((image) => image.thumb || image.fullsize);
@@ -395,61 +360,4 @@ export function hasOwnMedia(post: FeedPost): boolean {
 export function toPostUrl(post: FeedPost): string {
   const rkey = post.uri.split("/").pop() ?? "";
   return `https://bsky.app/profile/${post.author.handle}/post/${rkey}`;
-}
-
-function getSortValue(post: FeedPost, sortField: SortField): number {
-  if (sortField === "engagement") {
-    return getEngagement(post);
-  }
-
-  if (sortField === "ratio") {
-    return getResponseRatio(post);
-  }
-
-  if (sortField === "likesPlusReposts") {
-    return (post.likeCount ?? 0) + (post.repostCount ?? 0);
-  }
-
-  if (sortField === "repliesPlusQuotes") {
-    return (post.replyCount ?? 0) + (post.quoteCount ?? 0);
-  }
-
-  if (sortField === "timestamp") {
-    const ts = Date.parse(getPostTimestamp(post));
-    return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
-  }
-
-  const authorCreated = Date.parse(post.author.createdAt ?? "");
-  if (!Number.isFinite(authorCreated)) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  // Older accounts should rank as "bigger" age.
-  return -authorCreated;
-}
-
-export function sortPosts(
-  posts: FeedPost[],
-  sortField: SortField,
-  sortDirection: SortDirection,
-): FeedPost[] {
-  const sorted = [...posts];
-
-  sorted.sort((a, b) => {
-    const aValue = getSortValue(a, sortField);
-    const bValue = getSortValue(b, sortField);
-    if (sortDirection === "biggest") {
-      return bValue - aValue;
-    }
-
-    return aValue - bValue;
-  });
-
-  return sorted;
-}
-
-export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
 }

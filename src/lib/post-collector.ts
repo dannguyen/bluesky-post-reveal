@@ -8,12 +8,17 @@ import {
   fetchThread,
   parsePostUrl,
   resolveDid,
-  sleep,
   type FeedPost,
   type GetPostThreadResponse,
   type GetQuotesResponse,
   type ParsedPostUrl,
 } from "$lib/bluesky";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 import { mergePostsByUri } from "$lib/post-analysis";
 
 export interface CollectorState {

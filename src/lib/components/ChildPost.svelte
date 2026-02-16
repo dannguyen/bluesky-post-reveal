@@ -12,7 +12,7 @@
     joinedAgeLabel,
     responseLagLabel,
     shouldHighlightRatio
-  } from '$lib/child-post-presenter';
+  } from '$lib/response-presenter';
 
   export let post: FeedPost;
   export let rootPostTimestampMs: number;

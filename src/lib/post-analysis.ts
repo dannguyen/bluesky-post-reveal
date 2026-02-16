@@ -1,17 +1,23 @@
 import {
   getEngagement,
   getPostTimestamp,
+  getResponseRatio,
   hasOwnMedia,
-  sortPosts,
   type FeedPost,
-  type SortDirection,
-  type SortField,
 } from "$lib/bluesky";
+
+export type SortField =
+  | "engagement"
+  | "ratio"
+  | "timestamp"
+  | "authorAge"
+  | "likesPlusReposts"
+  | "repliesPlusQuotes";
+export type SortDirection = "biggest" | "smallest";
 
 export const PAGE_SIZE = 10;
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 export const ONE_HOUR_MS = 60 * 60 * 1000;
-export const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface FilterOptions {
   minEngagementThreshold: number | null;
@@ -183,7 +189,7 @@ export function averageResponseHoursFromPost(
       continue;
     }
 
-    totalHours += (itemMs - baseMs) / (60 * 60 * 1000);
+    totalHours += (itemMs - baseMs) / ONE_HOUR_MS;
     count += 1;
   }
 
@@ -203,6 +209,57 @@ export function highestEngagementPost(items: FeedPost[]): FeedPost | null {
   }
 
   return best;
+}
+
+function getSortValue(post: FeedPost, sortField: SortField): number {
+  if (sortField === "engagement") {
+    return getEngagement(post);
+  }
+
+  if (sortField === "ratio") {
+    return getResponseRatio(post);
+  }
+
+  if (sortField === "likesPlusReposts") {
+    return (post.likeCount ?? 0) + (post.repostCount ?? 0);
+  }
+
+  if (sortField === "repliesPlusQuotes") {
+    return (post.replyCount ?? 0) + (post.quoteCount ?? 0);
+  }
+
+  if (sortField === "timestamp") {
+    const ts = Date.parse(getPostTimestamp(post));
+    return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
+  }
+
+  // authorAge: older accounts rank as "bigger" age.
+  const authorCreated = Date.parse(post.author.createdAt ?? "");
+  if (!Number.isFinite(authorCreated)) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  return -authorCreated;
+}
+
+export function sortPosts(
+  posts: FeedPost[],
+  sortField: SortField,
+  sortDirection: SortDirection,
+): FeedPost[] {
+  const sorted = [...posts];
+
+  sorted.sort((a, b) => {
+    const aValue = getSortValue(a, sortField);
+    const bValue = getSortValue(b, sortField);
+    if (sortDirection === "biggest") {
+      return bValue - aValue;
+    }
+
+    return aValue - bValue;
+  });
+
+  return sorted;
 }
 
 export function totalPages(items: FeedPost[], pageSize = PAGE_SIZE): number {

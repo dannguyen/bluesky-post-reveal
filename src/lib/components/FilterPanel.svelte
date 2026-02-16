@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import type { SortDirection, SortField } from '$lib/bluesky';
+  import type { SortDirection, SortField } from '$lib/post-analysis';
 
   const dispatch = createEventDispatcher<{ filterinput: void }>();
 
@@ -69,5 +69,4 @@
       <span class="filter-label">Post has images/video</span>
     </label>
   </div>
-  <p class="filter-note">Empty or 0 values disable numeric filters. Enable "Post has images/video" to require media.</p>
 </section>
